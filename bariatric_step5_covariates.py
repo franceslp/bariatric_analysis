@@ -593,13 +593,11 @@ for cohort_name in ["study", "comparison"]:
 # ─────────────────────────────────────────────────────────────
 
 # Missingness summary table — useful for supplement
-print("
-  Missingness summary (% missing per covariate):")
+print("\n  Missingness summary (% missing per covariate):")
 miss_cols = ["baseline_a1c", "baseline_bmi", "dm_duration_years", "sex", "race"]
 for cohort_name in ["study", "comparison"]:
     sub = cov_df[cov_df["cohort"] == cohort_name]
-    print(f"
-    {cohort_name.upper()} GROUP:")
+    print(f"\n    {cohort_name.upper()} GROUP:")
     for col in miss_cols:
         if col in sub.columns:
             pct = sub[col].isna().mean() * 100
@@ -619,8 +617,7 @@ for cohort_name in ["study", "comparison"]:
             "pct_missing": round(pct, 1)
         })
 pd.DataFrame(miss_rows).to_csv("covariate_missingness.csv", index=False)
-print("
-  Saved: covariate_missingness.csv")
+print("\n  Saved: covariate_missingness.csv")
 
 study_cov = cov_df[cov_df["cohort"] == "study"].drop(columns=["cohort"])
 comp_cov  = cov_df[cov_df["cohort"] == "comparison"].drop(columns=["cohort"])
