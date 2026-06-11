@@ -178,12 +178,31 @@ surgery_dict = dict(zip(all_patients["patient_id"], all_patients["bariatric_date
 dm_dict      = dict(zip(all_patients["patient_id"], all_patients["first_dm_date"]))
 all_ids      = set(all_patients["patient_id"].unique())
 
-# Assert study and comparison groups are disjoint
+# PRIMARY ANALYSIS: first qualifying surgery only (Option 2)
+# Patients appearing in both cohorts had two bariatric surgeries
+# (typically sleeve first, then bypass after developing gastroparesis).
+# For the primary analysis these patients are excluded from BOTH cohorts
+# to prevent overlap and avoid immortal time / selection bias.
+# These patients are saved separately as a clinically meaningful
+# sensitivity analysis population (sleeve → GP → revision bypass pathway).
 overlap = set(study["patient_id"]) & set(comp["patient_id"])
-assert len(overlap) == 0, (
-    f"{len(overlap)} patients appear in both study and comparison groups — "
-    "check Step 3 and Step 4 exclusion logic"
-)
+if len(overlap) > 0:
+    print(f"  NOTE: {len(overlap):,} patients appear in both cohorts")
+    print(f"  (sleeve→gastroparesis→revision bypass pathway)")
+    print(f"  Excluding from both cohorts for primary analysis.")
+    print(f"  Saved separately as revision_pathway_patients.csv")
+    # Save overlap patients for sensitivity analysis
+    revision = pd.concat([
+        study[study["patient_id"].isin(overlap)],
+        comp[comp["patient_id"].isin(overlap)]
+    ]).sort_values(["patient_id", "bariatric_date"])
+    revision.to_csv("revision_pathway_patients.csv", index=False)
+    # Remove from both cohorts
+    study = study[~study["patient_id"].isin(overlap)].copy()
+    comp  = comp[~comp["patient_id"].isin(overlap)].copy()
+
+print(f"  Study group (primary analysis):      {len(study):,}")
+print(f"  Comparison group (primary analysis): {len(comp):,}")
 
 print(f"  Study group:      {len(study):,}")
 print(f"  Comparison group: {len(comp):,}")
