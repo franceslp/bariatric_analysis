@@ -154,30 +154,6 @@ all_patients = pd.concat([
           "post_op_gp_flag", "cohort"]]
 ], ignore_index=True)
 
-# Assert one surgery date per patient — catches upstream data issues
-max_dates = all_patients.groupby("patient_id")["bariatric_date"].nunique().max()
-assert max_dates == 1, f"Duplicate surgery dates found for some patients (max={max_dates})"
-
-# Index date validation
-n_missing_surg = all_patients["bariatric_date"].isna().sum()
-assert n_missing_surg == 0, f"{n_missing_surg} patients have missing surgery date"
-
-n_missing_dm = all_patients["first_dm_date"].isna().sum()
-if n_missing_dm > 0:
-    print(f"  WARNING: {n_missing_dm:,} patients have missing DM date — duration will be NaN")
-
-# Flag patients where surgery date is before DM date (data anomaly)
-bad_timing = (
-    all_patients["bariatric_date"] < all_patients["first_dm_date"]
-).sum()
-if bad_timing > 0:
-    print(f"  WARNING: {bad_timing:,} patients have surgery before DM date — check Step 3/4")
-
-# Fast lookups
-surgery_dict = dict(zip(all_patients["patient_id"], all_patients["bariatric_date"]))
-dm_dict      = dict(zip(all_patients["patient_id"], all_patients["first_dm_date"]))
-all_ids      = set(all_patients["patient_id"].unique())
-
 # PRIMARY ANALYSIS: first qualifying surgery only (Option 2)
 # Patients appearing in both cohorts had two bariatric surgeries
 # (typically sleeve first, then bypass after developing gastroparesis).
@@ -191,22 +167,48 @@ if len(overlap) > 0:
     print(f"  (sleeve→gastroparesis→revision bypass pathway)")
     print(f"  Excluding from both cohorts for primary analysis.")
     print(f"  Saved separately as revision_pathway_patients.csv")
-    # Save overlap patients for sensitivity analysis
     revision = pd.concat([
         study[study["patient_id"].isin(overlap)],
         comp[comp["patient_id"].isin(overlap)]
     ]).sort_values(["patient_id", "bariatric_date"])
     revision.to_csv("revision_pathway_patients.csv", index=False)
-    # Remove from both cohorts
     study = study[~study["patient_id"].isin(overlap)].copy()
     comp  = comp[~comp["patient_id"].isin(overlap)].copy()
 
 print(f"  Study group (primary analysis):      {len(study):,}")
 print(f"  Comparison group (primary analysis): {len(comp):,}")
 
-print(f"  Study group:      {len(study):,}")
-print(f"  Comparison group: {len(comp):,}")
-print(f"  Total patients:   {len(all_ids):,}")
+# Rebuild all_patients after overlap removal
+all_patients = pd.concat([
+    study[["patient_id", "bariatric_date", "first_dm_date",
+           "first_gp_date", "age_at_surgery", "procedure_type",
+           "post_op_gp_flag", "cohort"]],
+    comp[["patient_id", "bariatric_date", "first_dm_date",
+          "first_gp_date", "age_at_surgery", "procedure_type",
+          "post_op_gp_flag", "cohort"]]
+], ignore_index=True)
+
+# Assert one surgery date per patient — now safe after overlap removal
+max_dates = all_patients.groupby("patient_id")["bariatric_date"].nunique().max()
+assert max_dates == 1, f"Duplicate surgery dates remain after overlap removal (max={max_dates})"
+
+# Index date validation
+n_missing_surg = all_patients["bariatric_date"].isna().sum()
+assert n_missing_surg == 0, f"{n_missing_surg} patients have missing surgery date"
+
+n_missing_dm = all_patients["first_dm_date"].isna().sum()
+if n_missing_dm > 0:
+    print(f"  WARNING: {n_missing_dm:,} patients have missing DM date — duration will be NaN")
+
+bad_timing = (all_patients["bariatric_date"] < all_patients["first_dm_date"]).sum()
+if bad_timing > 0:
+    print(f"  WARNING: {bad_timing:,} patients have surgery before DM date — check Step 3/4")
+
+# Fast lookups
+surgery_dict = dict(zip(all_patients["patient_id"], all_patients["bariatric_date"]))
+dm_dict      = dict(zip(all_patients["patient_id"], all_patients["first_dm_date"]))
+all_ids      = set(all_patients["patient_id"].unique())
+print(f"  Total patients for covariate collection: {len(all_ids):,}")
 
 # ─────────────────────────────────────────────────────────────
 # CALCULATE DIABETES DURATION
