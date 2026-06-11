@@ -275,13 +275,15 @@ for pid, procs in all_bar_procs.items():
 
     # FIX 1 / Option B: exclude only if GP diagnosed BEFORE surgery
     # Patients with GP after surgery are retained and flagged
-    if gp_date is not None and gp_date < index_date:
+    # FIX: using <= so same-day GP diagnosis is treated as pre-operative
+    # With date-only data, same-day temporal order cannot be confirmed
+    if gp_date is not None and gp_date <= index_date:
         n_gp_before_surg += 1
         continue
 
-    # Flag 7: post-operative gastroparesis (GP diagnosed after surgery)
+    # Flag 7: post-operative gastroparesis (GP diagnosed strictly after surgery)
     post_op_gp_flag = (
-        gp_date is not None and gp_date >= index_date
+        gp_date is not None and gp_date > index_date
     )
 
     # Flag 8: same-date combined procedures
