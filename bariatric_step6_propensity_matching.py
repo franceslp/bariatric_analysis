@@ -113,12 +113,6 @@ comp_dates  = pd.read_csv("comparison_group_patients.csv", dtype=str)[["patient_
 study = study.merge(study_dates, on="patient_id", how="left")
 comp  = comp.merge(comp_dates,  on="patient_id", how="left")
 
-# Merge bariatric_date from Step 3/4 output files — not in covariate files
-study_dates = pd.read_csv("bariatric_study_patients.csv", dtype=str)[["patient_id", "bariatric_date"]]
-comp_dates  = pd.read_csv("comparison_group_patients.csv", dtype=str)[["patient_id", "bariatric_date"]]
-study = study.merge(study_dates, on="patient_id", how="left")
-comp  = comp.merge(comp_dates,  on="patient_id", how="left")
-
 print(f"  Study group loaded:      {len(study):,}")
 print(f"  Comparison group loaded: {len(comp):,}")
 
