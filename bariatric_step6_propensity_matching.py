@@ -494,9 +494,15 @@ print(f"""
 # ─────────────────────────────────────────────────────────────
 
 # Primary matched cohorts — keep patient_id and key clinical vars
-keep_cols = ["patient_id", "procedure_type", "age_at_surgery",
-             "baseline_a1c", "baseline_bmi", "dm_duration_years",
-             "ps", "logit_ps", "_group"]
+keep_cols = ["patient_id", "bariatric_date", "procedure_type",
+             "age_at_surgery", "baseline_a1c", "baseline_bmi",
+             "dm_duration_years", "ps", "logit_ps", "_group"]
+
+# Assert bariatric_date is present and complete before saving
+assert "bariatric_date" in matched_study.columns, "bariatric_date missing from matched_study"
+assert matched_study["bariatric_date"].notna().all(), "NaT values in matched_study bariatric_date"
+assert "bariatric_date" in matched_comp.columns, "bariatric_date missing from matched_comp"
+assert matched_comp["bariatric_date"].notna().all(), "NaT values in matched_comp bariatric_date"
 
 matched_study[keep_cols].to_csv("matched_study.csv", index=False)
 matched_comp[keep_cols].to_csv("matched_comparison.csv", index=False)
