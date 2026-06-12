@@ -129,7 +129,7 @@ def convert_types(df):
     # Boolean columns stored as strings
     bool_cols = [c for c in df.columns if c not in
                  ["patient_id", "sex", "race", "ethnicity",
-                  "procedure_type", "age_at_surgery"] + CONTINUOUS_VARS]
+                 "procedure_type", "age_at_surgery", "bariatric_date"] + CONTINUOUS_VARS]
     for col in bool_cols:
         if col in df.columns:
             df[col] = df[col].map(
